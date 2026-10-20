@@ -616,6 +616,8 @@ body.preview-shell { overflow: hidden; background: #2b2b2b; }
 	.item-folio__title, .item-folio__cat { font-size: 13px; }
 	.contact-content { flex-direction: column; text-align: center; padding-bottom: 60px; }
 	.contact-primary, .contact-secondary { flex: 1 1 auto; padding: 60px 20px 0; }
+	.contact-form { margin-bottom: 72px; }
+	.contact-status { margin-bottom: 60px; }
 	.contact-secondary { background: transparent; padding-top: 0; }
 	.contact-secondary h3 { display: none; }
 	.contact-social { justify-content: center; }
