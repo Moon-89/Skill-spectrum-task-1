@@ -1,108 +1,106 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import SocialList from './SocialList.jsx';
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const rules = {
-	name: { test: v => v.trim().length >= 2, message: 'Please enter your name (at least 2 characters).' },
-	email: { test: v => EMAIL_RE.test(v.trim()), message: 'Please enter a valid email address.' },
-	message: { test: v => v.trim().length >= 10, message: 'Please write a message (at least 10 characters).' },
-};
-
-const fields = [
-	{ name: 'name', label: 'Your Name', type: 'text', autoComplete: 'name' },
-	{ name: 'email', label: 'Your Email', type: 'email', autoComplete: 'email' },
-	{ name: 'subject', label: 'Subject', type: 'text' },
-	{ name: 'message', label: 'Your Message', textarea: true },
-];
-
-const empty = { name: '', email: '', subject: '', message: '' };
-
 export default function Contact() {
-	const [values, setValues] = useState(empty);
+	const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
 	const [errors, setErrors] = useState({});
-	const [status, setStatus] = useState('idle'); // idle | sending | sent
-	const formRef = useRef(null);
+	const [sending, setSending] = useState(false);
+	const [sent, setSent] = useState(false);
 
-	const check = (name, value) => (rules[name] && !rules[name].test(value) ? rules[name].message : null);
+	// Update the field that was typed in
+	function handleChange(e) {
+		setForm({ ...form, [e.target.name]: e.target.value });
+	}
 
-	const onChange = e => {
-		const { name, value } = e.target;
-		setValues(v => ({ ...v, [name]: value }));
-		if (errors[name]) setErrors(err => ({ ...err, [name]: check(name, value) }));
-	};
+	function validate() {
+		const newErrors = {};
+		if (form.name.trim().length < 2) newErrors.name = 'Please enter your name.';
+		if (!form.email.includes('@') || !form.email.includes('.')) newErrors.email = 'Please enter a valid email.';
+		if (form.message.trim().length < 10) newErrors.message = 'Message should be at least 10 characters.';
+		return newErrors;
+	}
 
-	const onBlur = e => {
-		const { name, value } = e.target;
-		if (value) setErrors(err => ({ ...err, [name]: check(name, value) }));
-	};
-
-	const onSubmit = e => {
+	function handleSubmit(e) {
 		e.preventDefault();
-		const next = Object.fromEntries(Object.keys(rules).map(k => [k, check(k, values[k])]));
-		setErrors(next);
-		const firstInvalid = Object.keys(next).find(k => next[k]);
-		if (firstInvalid) { formRef.current.elements[firstInvalid].focus(); return; }
-		setStatus('sending');
-		setTimeout(() => { setStatus('sent'); setValues(empty); }, 1400);
-	};
+		const newErrors = validate();
+		setErrors(newErrors);
+
+		if (Object.keys(newErrors).length > 0) return; // stop if there are errors
+
+		// No real server here, so we just pretend to send it
+		setSending(true);
+		setTimeout(() => {
+			setSending(false);
+			setSent(true);
+		}, 1500);
+	}
 
 	return (
-		<section id="contact" className="s-contact target-section">
+		<section id="contact" className="s-contact">
 			<div className="overlay" />
 			<div className="contact__line" />
+
 			<div className="gl-wrap">
 				<div className="section-header reveal">
 					<h3 className="subhead">Contact Us</h3>
 					<h2 className="display-2x light">Reach out for a new project or just say hello</h2>
 				</div>
+
 				<div className="contact-content reveal">
 					<div className="contact-primary">
 						<h3>Send Us A Message</h3>
-						{status !== 'sent' ? (
-							<form ref={formRef} className={`contact-form${status === 'sending' ? ' sending' : ''}`} noValidate onSubmit={onSubmit}>
-								{fields.map(f => {
-									const id = `contact-${f.name}`;
-									const props = {
-										id, name: f.name, placeholder: f.label, value: values[f.name],
-										onChange, onBlur, autoComplete: f.autoComplete,
-										'aria-invalid': errors[f.name] ? true : undefined,
-									};
-									return (
-										<div key={f.name} className={`form-field${errors[f.name] ? ' invalid' : ''}`}>
-											<label htmlFor={id} className="visually-hidden">{f.label}</label>
-											{f.textarea ? <textarea rows="10" {...props} /> : <input type={f.type} {...props} />}
-											{errors[f.name] && <span className="err">{errors[f.name]}</span>}
-										</div>
-									);
-								})}
+
+						{sent ? (
+							<div className="contact-status show">Your message was sent, thank you!</div>
+						) : (
+							<form className={sending ? 'contact-form sending' : 'contact-form'} onSubmit={handleSubmit} noValidate>
+								<div className={errors.name ? 'form-field invalid' : 'form-field'}>
+									<input name="name" type="text" placeholder="Your Name" value={form.name} onChange={handleChange} />
+									{errors.name && <span className="err">{errors.name}</span>}
+								</div>
+
+								<div className={errors.email ? 'form-field invalid' : 'form-field'}>
+									<input name="email" type="email" placeholder="Your Email" value={form.email} onChange={handleChange} />
+									{errors.email && <span className="err">{errors.email}</span>}
+								</div>
+
+								<div className="form-field">
+									<input name="subject" type="text" placeholder="Subject" value={form.subject} onChange={handleChange} />
+								</div>
+
+								<div className={errors.message ? 'form-field invalid' : 'form-field'}>
+									<textarea name="message" placeholder="Your Message" rows="10" value={form.message} onChange={handleChange} />
+									{errors.message && <span className="err">{errors.message}</span>}
+								</div>
+
 								<button type="submit" className="gl-btn gl-btn--primary">Submit</button>
-								<div className="submit-loader" aria-hidden="true">
+
+								<div className="submit-loader">
 									<div className="text-loader">Sending...</div>
-									<div className="loader-dots justify-content-center mt-2"><span /><span /><span /></div>
 								</div>
 							</form>
-						) : (
-							<div className="contact-status show" role="status">Your message was sent, thank you!</div>
 						)}
 					</div>
+
 					<div className="contact-secondary">
-						<div className="contact-info">
-							<h3>Contact Info</h3>
-							<div className="cinfo">
-								<h5>Where to Find Us</h5>
-								<p>123 Market Street<br />San Francisco, CA<br />94105 US</p>
-							</div>
-							<div className="cinfo">
-								<h5>Email Us At</h5>
-								<p><a href="mailto:contact@example.com">contact@example.com</a><br /><a href="mailto:info@example.com">info@example.com</a></p>
-							</div>
-							<div className="cinfo">
-								<h5>Call Us At</h5>
-								<p>Phone: +1 (415) 555-0132<br />Mobile: +1 (415) 555-0147<br />Fax: +1 (415) 555-0199</p>
-							</div>
-							<SocialList className="contact-social" />
+						<h3>Contact Info</h3>
+
+						<div className="cinfo">
+							<h5>Where to Find Us</h5>
+							<p>123 Market Street<br />San Francisco, CA<br />94105 US</p>
 						</div>
+
+						<div className="cinfo">
+							<h5>Email Us At</h5>
+							<p>contact@example.com<br />info@example.com</p>
+						</div>
+
+						<div className="cinfo">
+							<h5>Call Us At</h5>
+							<p>Phone: +1 (415) 555-0132<br />Mobile: +1 (415) 555-0147<br />Fax: +1 (415) 555-0199</p>
+						</div>
+
+						<SocialList className="contact-social" />
 					</div>
 				</div>
 			</div>

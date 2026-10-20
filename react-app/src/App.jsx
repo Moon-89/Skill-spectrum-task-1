@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react';
-import { navLinks } from './data.js';
-import { useBodyClass, useReveal, useScrollState } from './hooks.js';
 import Preloader from './components/Preloader.jsx';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
@@ -11,40 +9,65 @@ import Clients from './components/Clients.jsx';
 import Contact from './components/Contact.jsx';
 import Footer from './components/Footer.jsx';
 
-const sectionIds = navLinks.map(link => link.id);
+const sections = ['home', 'about', 'services', 'works', 'clients', 'contact'];
 
 export default function App() {
 	const [loaded, setLoaded] = useState(false);
-	const { opaque, showTop, current } = useScrollState(sectionIds);
+	const [scrollY, setScrollY] = useState(0);
+	const [currentSection, setCurrentSection] = useState('home');
 
-	useReveal();
-	useBodyClass('loaded', loaded);
-
+	// Hide the preloader shortly after the page opens
 	useEffect(() => {
-		const finish = () => setTimeout(() => setLoaded(true), 300);
-		if (document.readyState === 'complete') finish();
-		else window.addEventListener('load', finish, { once: true });
-		const failsafe = setTimeout(() => setLoaded(true), 3000);
-		return () => { window.removeEventListener('load', finish); clearTimeout(failsafe); };
+		const timer = setTimeout(() => {
+			setLoaded(true);
+			document.body.classList.add('loaded'); // starts the hero text animation
+		}, 800);
+		return () => clearTimeout(timer);
 	}, []);
 
-	// Placeholder links (#0) should not jump to the top of the page.
+	// Remember how far the user has scrolled and which section is on screen
 	useEffect(() => {
-		const onClick = e => {
-			const a = e.target.closest('a[href="#0"]');
-			if (a) e.preventDefault();
-		};
-		document.addEventListener('click', onClick);
-		return () => document.removeEventListener('click', onClick);
+		function handleScroll() {
+			setScrollY(window.scrollY);
+
+			let current = 'home';
+			sections.forEach(id => {
+				const section = document.getElementById(id);
+				if (section && window.scrollY >= section.offsetTop - window.innerHeight / 3) {
+					current = id;
+				}
+			});
+			setCurrentSection(current);
+		}
+
+		window.addEventListener('scroll', handleScroll);
+		return () => window.removeEventListener('scroll', handleScroll);
 	}, []);
+
+	// Fade elements with the "reveal" class in when they scroll into view
+	useEffect(() => {
+		const observer = new IntersectionObserver(entries => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					entry.target.classList.add('is-visible');
+					observer.unobserve(entry.target);
+				}
+			});
+		}, { threshold: 0.1 });
+
+		document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+		return () => observer.disconnect();
+	}, []);
+
+	// The menu button turns black once we scroll past the hero
+	const pastHero = scrollY > window.innerHeight - 70;
 
 	return (
 		<>
 			<Preloader done={loaded} />
 			<div id="top" />
-			<a className="skip-link" href="#main-content">Skip to content</a>
-			<Header opaque={opaque} current={current} />
-			<main id="main-content" tabIndex={-1}>
+			<Header darkButton={pastHero} currentSection={currentSection} />
+			<main>
 				<Hero />
 				<About />
 				<Services />
@@ -52,7 +75,7 @@ export default function App() {
 				<Clients />
 				<Contact />
 			</main>
-			<Footer showTop={showTop} />
+			<Footer showBackToTop={scrollY > 600} />
 		</>
 	);
 }

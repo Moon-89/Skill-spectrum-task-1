@@ -359,9 +359,8 @@ body.loaded .home-content__main > *:nth-child(3) { animation-delay: .3s; }
 }
 .clients-outer::before { left: 0; background: linear-gradient(to right, #e6e6e6, transparent); }
 .clients-outer::after { right: 0; background: linear-gradient(to left, #e6e6e6, transparent); }
-.clients { display: flex; width: max-content; animation: clients-scroll 20s linear infinite; cursor: grab; }
+.clients { display: flex; width: max-content; animation: clients-scroll 20s linear infinite; }
 .clients:hover, .clients:focus-within { animation-play-state: paused; }
-.clients.dragging { cursor: grabbing; user-select: none; }
 @keyframes clients-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .clients__slide {
 	flex: 0 0 auto; width: 150px; padding: 15px 20px;

@@ -6,12 +6,12 @@ import './styles.css';
 import App from './App.jsx';
 import PreviewBar from './components/PreviewBar.jsx';
 
-// The top-level page shows the preview toolbar with the site in an iframe (?frame=1),
-// so the device buttons resize a real viewport and the site's media queries apply.
-const inFrame = new URLSearchParams(window.location.search).has('frame');
+// "/?frame=1" shows only the website (this is what loads inside the preview iframe).
+// "/" shows the preview toolbar with the website underneath.
+const showSiteOnly = window.location.search.includes('frame');
 
 ReactDOM.createRoot(document.getElementById('root')).render(
 	<React.StrictMode>
-		{inFrame ? <App /> : <PreviewBar />}
+		{showSiteOnly ? <App /> : <PreviewBar />}
 	</React.StrictMode>
 );
